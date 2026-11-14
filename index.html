@@ -31,6 +31,10 @@
       "@id": "https://vorniqatechnologies-dotcom.github.io/vorniqatech/#organization",
       "url": "https://vorniqatechnologies-dotcom.github.io/vorniqatech/",
       "logo": "https://vorniqatechnologies-dotcom.github.io/vorniqatech/favicon.svg",
+      "sameAs": [
+        "https://www.linkedin.com/company/vorniqa-technologies/",
+        "https://www.instagram.com/vorniqatechnologies/"
+      ],
       "description": "Software development for cooperative society accounting, ledger management, financial reporting and audit preparation.",
       "email": "vorniqatechnologies@gmail.com",
       "address": {"@type": "PostalAddress", "addressCountry": "IN"},
@@ -1458,8 +1462,13 @@
                         <li><a href="javascript:void(0)" onclick="openDemoModal()" class="hover:text-blue-400 transition-colors">Request Demo</a></li>
                         <li><a href="#contact" class="hover:text-blue-400 transition-colors">Contact Us</a></li>
                         <li class="pt-2">
-                            <a href="https://linkedin.com" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-blue-500 transition-colors text-xs">
+                            <a href="https://www.linkedin.com/company/vorniqa-technologies/" target="_blank" rel="noopener" aria-label="Vorniqa Technologies on LinkedIn (opens in a new tab)" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-blue-500 transition-colors text-xs">
                                 <i data-lucide="linkedin" class="w-3.5 h-3.5 text-blue-400"></i> LinkedIn
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.instagram.com/vorniqatechnologies/" target="_blank" rel="noopener" aria-label="Vorniqa Technologies on Instagram (opens in a new tab)" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-blue-500 transition-colors text-xs">
+                                <i data-lucide="instagram" class="w-3.5 h-3.5 text-blue-400"></i> Instagram
                             </a>
                         </li>
                     </ul>
@@ -1562,7 +1571,7 @@
 
         // Target Google Apps Script Web App URL
         // Replace this string with your Google Apps Script Web App Executable URL
-        let GOOGLE_SCRIPT_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL";
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzqepG6hahy8fglaPMKPi10OBef7Jt-FW_CsHJYQlbe7fNYtJicHa0pEHbUoU1qiSYWWQ/exec";
 
         // Mobile Menu Toggle Logic
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
@@ -1615,6 +1624,10 @@
 
         // Send payload to Google Apps Script
         async function submitToGoogleAppsScript(formData, submitBtn) {
+            if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(GOOGLE_SCRIPT_URL)) {
+                showNotificationToast("Form unavailable", "Please email vorniqatechnologies@gmail.com to request a demo.");
+                return false;
+            }
             const originalBtnText = submitBtn.innerHTML;
             submitBtn.disabled = true;
             submitBtn.innerHTML = `<span>Submitting...</span>`;
@@ -1630,17 +1643,21 @@
             };
 
             try {
-                if (GOOGLE_SCRIPT_URL !== "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL") {
-                    await fetch(GOOGLE_SCRIPT_URL, {
-                        method: 'POST',
-                        mode: 'no-cors', // Standard cross-origin POST for Google Web Apps
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                }
-                showNotificationToast("Request Sent", "Your demo request has been logged successfully.");
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    credentials: 'omit',
+                    // A simple content type avoids an unsupported CORS preflight.
+                    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+                    body: JSON.stringify(payload),
+                    signal: AbortSignal.timeout(30000)
+                });
+                // An opaque response cannot confirm that Google saved the row.
+                showNotificationToast("Request sent for processing", "Delivery could not be confirmed here. For confirmation, email vorniqatechnologies@gmail.com.");
+                return true;
             } catch (err) {
-                showNotificationToast("Submitted", "Thank you! Our team will contact you shortly.");
+                showNotificationToast("Delivery not confirmed", "Your details are still in the form. Please email vorniqatechnologies@gmail.com before retrying.");
+                return false;
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
@@ -1648,24 +1665,24 @@
         }
 
         // Form Submit Handler for Contact Section
-        function handleFormSubmit(event) {
+        async function handleFormSubmit(event) {
             event.preventDefault();
-            const formData = new FormData(event.target);
+            const form = event.target;
+            const formData = new FormData(form);
             const submitBtn = document.getElementById('contact-submit-btn');
-            
-            submitToGoogleAppsScript(formData, submitBtn);
-            event.target.reset();
+            if (submitBtn.disabled) return;
+            await submitToGoogleAppsScript(formData, submitBtn);
+            // Keep details because a cross-origin response cannot confirm storage.
         }
 
         // Modal Submit Handler
-        function handleModalSubmit(event) {
+        async function handleModalSubmit(event) {
             event.preventDefault();
-            const formData = new FormData(event.target);
+            const form = event.target;
+            const formData = new FormData(form);
             const submitBtn = document.getElementById('modal-submit-btn');
-            
-            closeDemoModal();
-            submitToGoogleAppsScript(formData, submitBtn);
-            event.target.reset();
+            if (submitBtn.disabled) return;
+            if (await submitToGoogleAppsScript(formData, submitBtn)) closeDemoModal();
         }
 
         // Show Toast Message Box
